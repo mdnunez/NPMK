@@ -206,6 +206,9 @@ function varargout = openNEV(varargin)
 % 5.4.0.1: January 10, 2018
 %   - Fixed a NeuroMotive bug when AllMarkers was being recorded.
 %
+% 5.5.0.0: May 17, 2019
+%   - For use with Octave and older MATLAB versions
+%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% Check for the latest version fo NPMK
@@ -377,6 +380,9 @@ if strcmpi(Flags.ParseData, 'parse')
         return;
     end
 end
+
+%% Are we using Octave?
+isOctave = exist('OCTAVE_VERSION', 'builtin') ~= 0;
 
 tic;
 matPath = [fileFullPath(1:end-4) '.mat'];
@@ -738,10 +744,10 @@ if strcmpi(Flags.ReadData, 'read')
                 for IDX = 1:size(NEV.ObjTrackInfo,2)
                     emptyChar = find(NEV.ObjTrackInfo(IDX).TrackableName == 0, 1);
                     NEV.ObjTrackInfo(IDX).TrackableName(emptyChar:end) = [];
-                    if ~(contains(NEV.ObjTrackInfo(IDX).TrackableName, '1') || ...
-                        contains(NEV.ObjTrackInfo(IDX).TrackableName, '2') || ...
-                        contains(NEV.ObjTrackInfo(IDX).TrackableName, '3') || ...
-                        contains(NEV.ObjTrackInfo(IDX).TrackableName, '4'))
+                    if ~(any(regexp(NEV.ObjTrackInfo(IDX).TrackableName, '1')) || ...
+                        any(regexp(NEV.ObjTrackInfo(IDX).TrackableName, '2')) || ...
+                        any(regexp(NEV.ObjTrackInfo(IDX).TrackableName, '3')) || ...
+                        any(regexp(NEV.ObjTrackInfo(IDX).TrackableName, '4')))
                         nameLength = min(length(NEV.ObjTrackInfo(IDX-1).TrackableName(1:end-1)), length(NEV.ObjTrackInfo(IDX).TrackableName(1:end-1)));
                         if ~strcmpi(NEV.ObjTrackInfo(IDX-1).TrackableName(1:nameLength-1), NEV.ObjTrackInfo(IDX).TrackableName(1:nameLength-1))
                             objectIndex = 1;
@@ -922,7 +928,11 @@ if strcmpi(Flags.SaveFile, 'save')
             if strcmpi(Flags.WarningStat, 'warning')  
                 disp('Saving MAT file. This may take a few seconds...');
             end
-            save(matPath, 'NEV', '-v7.3');
+            if isOctave,
+                save(matPath, 'NEV', '-v7');
+            else
+                save(matPath, 'NEV', '-v7.3');
+            end
         else
             if strcmpi(Flags.WarningStat, 'warning')  
                 disp('File was not overwritten.');
@@ -933,12 +943,20 @@ if strcmpi(Flags.SaveFile, 'save')
             disp(['File ' matPath ' already exists.']);
             disp('Overwriting the old MAT file. This may take a few seconds...');
         end
-        save(matPath, 'NEV', '-v7.3');        
+        if isOctave,
+            save(matPath, 'NEV', '-v7');
+        else
+            save(matPath, 'NEV', '-v7.3');
+        end        
     else
         if strcmpi(Flags.WarningStat, 'warning')
             disp('Saving MAT file. This may take a few seconds...');
         end
-        save(matPath, 'NEV', '-v7.3');
+        if isOctave,
+            save(matPath, 'NEV', '-v7');
+        else
+            save(matPath, 'NEV', '-v7.3');
+        end 
     end
     clear overWrite;
 end
